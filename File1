@@ -1,1 +1,12 @@
+import random
+import math
 
+class NeuralNetwork:
+    def __init__(self,n_input,n_hidden,n_output):
+        n_input = 11
+        n_output = 1
+        network = []
+        h_layer = [{'weights' : [random.random() for i in range(n_input+1)]} for j in range(n_hidden)] 
+        o_layer = [{'weights' : [random.random() for i in range(n_hidden+1)]} for j in range(n_output)] #Pas rééllement utile imo
+        network.append(h_layer)
+        network.append(o_layer)
