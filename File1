@@ -1,17 +1,37 @@
 import random
 import math
+import csv
 
-def csv_into_list(filename):
-  list= []
+def csv_into_list():  #Met le fichier sous forme de liste
+  data = []
   count = 0
-  with open(filename,'r') as file:
+  with open("winequalityred.csv",'r') as file:
     reader = csv.reader(file, delimiter =';')
     for row in reader:
       if count == 0:
         count += 1 #On passe la 1ère ligne
       else:
-        list.append(row)
-  #return list
+        data.append(row)
+  return data
+  
+
+def str_into_float(data,col):
+  for row in data:
+    row[col] = float(row[col])
+
+"""
+Pas utile pour le moment, va ralentir l'execution pour rien.
+data = csv_into_list()
+for i in range(len(data[0])-1):
+  str_into_float(data,i)
+"""
+
+"""
+Test
+for row in data:
+  print(row[0],type(row[0]))
+  break
+"""
 
 
 class NeuralNetwork():
@@ -48,4 +68,4 @@ class NeuralNetwork():
      return self.__sigmoid(dot(inputs, self.synaptic_weights))
 """
 qqch = NeuralNetwork(11,3,1)
-print(qqch.activation())
+#print(qqch.activation())
