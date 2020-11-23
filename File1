@@ -1,12 +1,51 @@
 import random
 import math
 
-class NeuralNetwork:
-    def __init__(self,n_input,n_hidden,n_output):
-        n_input = 11
-        n_output = 1
-        network = []
-        h_layer = [{'weights' : [random.random() for i in range(n_input+1)]} for j in range(n_hidden)] 
-        o_layer = [{'weights' : [random.random() for i in range(n_hidden+1)]} for j in range(n_output)] #Pas rééllement utile imo
-        network.append(h_layer)
-        network.append(o_layer)
+def csv_into_list(filename):
+  list= []
+  count = 0
+  with open(filename,'r') as file:
+    reader = csv.reader(file, delimiter =';')
+    for row in reader:
+      if count == 0:
+        count += 1 #On passe la 1ère ligne
+      else:
+        list.append(row)
+  #return list
+
+
+class NeuralNetwork():
+  def __init__(self,n_input,n_hidden,n_output):
+    self.n_input = n_input
+    self.n_hidden = n_hidden
+    self.n_output = n_output
+
+  def activation(self):
+    network = []
+    h_layer = [{'weights' : [random.random() for i in range(self.n_input+1)]} for j in range(self.n_hidden)]
+    o_layer = [{'weights' : [random.random() for i in range(self.n_hidden+1)]} for j in range(self.n_output)]
+    network.append(h_layer)
+    network.append(o_layer)
+    return network
+
+""""
+  def sigmoid(self):
+		a = (1 / (1 + exp(-x)))
+		return a
+        
+  def sigmoid_derivative(self,x):
+    b = self.sigmoid(x) * (1 - self.sigmoid(x))
+		return b
+
+  def train(self, training_set_inputs, training_set_outputs, number_of_training_iterations):
+        for iteration in range(number_of_training_iterations):
+            output = self.think(training_set_inputs)
+            error = training_set_outputs - output
+            adjustment = dot(training_set_inputs.T, error * self.__sigmoid_derivative(output))
+		   	self.synaptic_weights += adjustment
+ 
+  def think(self, inputs):
+     return self.__sigmoid(dot(inputs, self.synaptic_weights))
+"""
+qqch = NeuralNetwork(11,3,1)
+print(qqch.activation())
