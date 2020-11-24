@@ -3,21 +3,28 @@ import math
 import csv
 
 def csv_into_list():  #Met le fichier sous forme de liste
-  data = []
+  data_list = []
   count = 0
-  with open("winequalityred.csv",'r') as file:
+  with open("winequalityred.csv",'r') as file: #skipHeader ?
     reader = csv.reader(file, delimiter =';')
     for row in reader:
       if count == 0:
         count += 1 #On passe la 1ère ligne
       else:
-        data.append(row)
-  return data
-  
+        data_list.append(row)
+  return data_list
 
 def str_into_float(data,col):
   for row in data:
     row[col] = float(row[col])
+
+def quality01():  
+  desired_output= [] #liste de "vrais" output divisés par 10
+  for i in data:
+    last = float(i[11])/10
+    desired_output.append(last)
+  return desired_output
+
 
 """
 Pas utile pour le moment, va ralentir l'execution pour rien.
@@ -27,36 +34,43 @@ for i in range(len(data[0])-1):
 """
 
 """
-Test
+#Test
+data = csv_into_list()
+
+#print(data)
+
+#print(quality01())
+"""
+"""
 for row in data:
   print(row[0],type(row[0]))
   break
 """
-
 
 class NeuralNetwork():
   def __init__(self,n_input,n_hidden,n_output):
     self.n_input = n_input
     self.n_hidden = n_hidden
     self.n_output = n_output
+    #self.network = network
 
-  def activation(self):
-    network = []
-    h_layer = [{'weights' : [random.random() for i in range(self.n_input+1)]} for j in range(self.n_hidden)]
-    o_layer = [{'weights' : [random.random() for i in range(self.n_hidden+1)]} for j in range(self.n_output)]
+  def new_network(self): #Problème de style, on ré-initialise une 2e fois, autant le mettre dans __init__()
+    network = [] #stocke tous les points
+    h_layer = [[random.random() for i in range(self.n_input)] for j in range(self.n_hidden)]#crée un weight par neurone de la couche hidden, +1 est le biais 
+    o_layer = [[random.random() for i in range(self.n_hidden)] for j in range(self.n_output)]#même chose pour couche output
     network.append(h_layer)
     network.append(o_layer)
     return network
 
-""""
-  def sigmoid(self):
-		a = (1 / (1 + exp(-x)))
-		return a
-        
+
+  def sigmoid(self,x):
+    a = (1/(1+math.exp(-x)))
+    return a
+
   def sigmoid_derivative(self,x):
     b = self.sigmoid(x) * (1 - self.sigmoid(x))
-		return b
-
+    return b
+"""
   def train(self, training_set_inputs, training_set_outputs, number_of_training_iterations):
         for iteration in range(number_of_training_iterations):
             output = self.think(training_set_inputs)
@@ -67,5 +81,33 @@ class NeuralNetwork():
   def think(self, inputs):
      return self.__sigmoid(dot(inputs, self.synaptic_weights))
 """
+
+
+data = csv_into_list()
 qqch = NeuralNetwork(11,3,1)
-#print(qqch.activation())
+#print(qqch.new_network())
+network = qqch.new_network()
+
+
+
+def output(couche,neurone,ligne): # couche : 0 = hidden  
+  #Return un input, mais méthode dégueulasse.
+  sum = 0
+  for i in range(len(network[couche][neurone])):
+    sum +=float(network[couche][neurone][i])*float(data[ligne][i])
+    print(float(network[couche][neurone][i]),"*",float(data[ligne][i]))
+  return sum
+
+print(output(0,0,0))
+
+#output = qqch.sigmoid(sum)
+#print(output)
+
+#(qqch.quality01 - output)
+
+
+
+"""
+b = qqch.sigmoid_derivative(0.5)
+print(b)
+"""
