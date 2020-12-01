@@ -1,6 +1,7 @@
 import random
 import math
 import csv
+import numpy as np
 
 def csv_into_list():  #Met le fichier sous forme de liste
   data_list = []
@@ -18,13 +19,33 @@ def str_into_float(data,col):
   for row in data:
     row[col] = float(row[col])
 
-def quality01():  
+def quality01():  #Prend un array comme un input, argument relié à "data" ça serait cool
   desired_output= [] #liste de "vrais" output divisés par 10
   for i in data:
     last = float(i[11])/10
     desired_output.append(last)
   return desired_output
+"""
+def mean_col(colonne,data): #Avant définir data = csv_into_list(...)
+  somme = 0
+  for row in data:
+    somme +=float(row[colonne])
+  return somme/len(data)
 
+
+def var_col(colonne,data): #Avant definir mean = mean_col(...), data = csv_into_list(...)
+#Fonction bizarrement lente(+/- 2sec)
+  var = 0
+  for row in data:
+    var += (float(row[colonne])-mean_col(colonne,data))**2
+  return var/len(data)
+
+
+def preprocessing(ligne,col): #Definir data = csv_into_list
+  y_ij = (float(data[ligne][col])-mean_col(col,data))/var_col(col,data) 
+  #i = ligne, j = colonne
+  return y_ij
+"""
 
 """
 Pas utile pour le moment, va ralentir l'execution pour rien.
@@ -33,17 +54,6 @@ for i in range(len(data[0])-1):
   str_into_float(data,i)
 """
 
-"""
-#Test
-data = csv_into_list()
-#print(data)
-#print(quality01())
-"""
-"""
-for row in data:
-  print(row[0],type(row[0]))
-  break
-"""
 
 class NeuralNetwork():
   def __init__(self,n_input,n_hidden,n_output):
@@ -60,6 +70,48 @@ class NeuralNetwork():
     network.append(o_layer)
     return network
 
+  def output_h(self,neurone,ligne,couche=0): # couche : 0 = hidden  
+    #Return un input, mais méthode dégueulasse.
+    sum = 0
+    for i in range(len(network[couche][neurone])):
+      sum +=float(network[couche][neurone][i])*float(data[ligne][i])
+      #print(float(network[couche][neurone][i]),"*",float(data[ligne][i]))
+    return sum
+
+  def output_e(self,neurone,ligne,couche=1):
+    sum = 0
+    for i in range(len(network[couche][neurone])):
+      sum+= float((network[couche][neurone][i])*NeuralNetwork.output_h(self,i,ligne))
+    return sum
+
+
+  def sigmoid(self,x):
+    f = (1/(1+math.exp(-x)))
+    return f
+
+  def sigmoid_derivative(self,x):
+    b = self.sigmoid(x) * (1 - self.sigmoid(x))
+    return b
+  
+  def erreur_ext(self,true,output): #25/11 18:42 Ne fonctionne pas
+  #je préfère l'appeller output_error
+    desired_output = quality01()[0]
+    y_chapeau = NeuralNetwork.output_e(self,0,0)
+    e_e = (desired_output - y_chapeau)*NeuralNetwork.sigmoid_derivative(self,y_chapeau)
+    return e_e
+
+  def internal_error(self, rank_hidden, ligne):
+  #où rank_hidden est le numéro de neurone dans une couche cachée, 
+    y_true = quality01()[ligne]
+    y_chapeau_ext = NeuralNetwork.output_e(self,0,0)
+    #print(y_chapeau_ext) #Couche interne ou couche externe ?
+    y_chapeau_int = NeuralNetwork.output_h(self,rank_hidden,0)
+    #print(y_chapeau_int)
+    a = ((NeuralNetwork.new_network(self)[-1][0][rank_hidden])*(NeuralNetwork.erreur_ext(self,y_true,y_chapeau_ext))*(NeuralNetwork.sigmoid_derivative(self,y_chapeau_int)))
+    #print(NeuralNetwork.new_network(self)[-1][0][rank_hidden],NeuralNetwork.erreur_ext(self,y_true,y_chapeau_ext),NeuralNetwork.sigmoid_derivative(self,y_chapeau_int),a)
+    return a
+    
+  
   def output(self,couche,neurone,ligne): # couche : 0 = hidden  
     #Return un input, mais méthode dégueulasse.
     sum = 0
@@ -69,34 +121,24 @@ class NeuralNetwork():
     return sum
 
 
-  def sigmoid(self,x):
-    a = (1/(1+math.exp(-x)))
-    return a
+  def update_weights(self,ligne,l_rate):
+    #Poids couche interne
+    true = quality01()[ligne]
+    for k in range(len(network[0])):
+      for i in range(11):
+        network[0][k][i]= network[0][k][i] + l_rate*NeuralNetwork.internal_error(self,k,ligne)*float(data[ligne][i])
+        #print(NeuralNetwork.internal_error(self,k,ligne)) #Ne print que 0.0
+    #Poids couche externe:
+    for j in range(len(network[0])):
+      network[1][0][j] = network[1][0][j] + l_rate*NeuralNetwork.erreur_ext(self,true,NeuralNetwork.output(self,1,0,ligne))*NeuralNetwork.output_h(self,j,ligne)
+    #prob avec erreur_ext et internal_error
 
-  def sigmoid_derivative(self,x):
-    b = self.sigmoid(x) * (1 - self.sigmoid(x))
-    return b
-  
-  def erreur_ext(self,true,output): #25/11 18:42 Ne fonctionne pas
-  #je préfère l'appeller output_error
-    desired_output = quality01()[0]
-    y_chapeau = NeuralNetwork.output(self,1,0,0)
-    e_e = (desired_output - y_chapeau)*NeuralNetwork.sigmoid_derivative(self,y_chapeau)
-    return e_e
-
-  def internal_error(self, rank_hidden, ligne):
-  #où rank_hidden est le numéro de neurone dans une couche cachée, 
-    y_true = quality01()[ligne]
-    y_chapeau_ext = NeuralNetwork.output(self,1,0,ligne) #Couche interne ou couche externe ?
-    y_chapeau_int = NeuralNetwork.output(self,0,rank_hidden,ligne)
-    err_hidden_neuron= (NeuralNetwork.new_network[-1][0][rank_hidden]*NeuralNetwork.erreur_ext(self,y_chapeau_ext))*NeuralNetwork.sigmoid_derivative(self,y_chapeau_int)
-    return err_hidden_neuron
 """
-  def train(self, training_set_inputs, training_set_outputs, number_of_training_iterations):
-        for iteration in range(number_of_training_iterations):
-            output = self.think(training_set_inputs)
-            error = training_set_outputs - output
-            adjustment = dot(training_set_inputs.T, error * self.__sigmoid_derivative(output))
+  def train(self,training_set_inputs,training_set_outputs, number_of_training_iterations=1600?):
+        for i in range(number_of_training_iterations):
+          output = self.think(training_set_inputs)
+          error = training_set_outputs - output
+          adjustment = dot(training_set_inputs.T, error * NeuralNetwork.sigmoid_derivative(self,output))
 		   	self.synaptic_weights += adjustment
  
   def think(self, inputs):
@@ -105,22 +147,29 @@ class NeuralNetwork():
 
 
 data = csv_into_list()
+
 qqch = NeuralNetwork(11,3,1)
-#print(qqch.new_network())
-network = qqch.new_network()
-output = qqch.output(0,0,0)
+#network = qqch.new_network()
 #print(qqch.erreur_ext(5,output))
-test = qqch.internal_error(0,0)
-"""
-print(qqch.sigmoid(2))
-print(qqch.sigmoid_derivative(2))
-"""
+#qqch.internal_error(0,0)
+#print(qqch.output_h(0,0))
+#print(mean_col(0,data))
+#print(var_col(0,data))
+network = qqch.new_network()
+a = qqch.update_weights(0,1)
+print(a)
 #print(qqch.output(0,0,1))
 #output = qqch.sigmoid(sum)
 #print(output)
 #(qqch.quality01 - output)
 
 """
-b = qqch.sigmoid_derivative(0.5)
-print(b)
+Test update_weights
 """
+NN = NeuralNetwork(11,3,1)
+net = NN.new_network()
+print("avant update", net)
+NN.update_weights(0,1)
+print("apres update", net)
+print("-----------------------------------------------")
+print(NN.internal_error(0,0))
