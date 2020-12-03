@@ -1,0 +1,190 @@
+import random
+import math
+import csv
+import numpy as np
+
+
+def csv_into_list():  #Met le fichier sous forme de liste
+    data_list = []
+    count = 0
+    with open("winequalityred.csv", 'r') as file:  #skipHeader ?
+        reader = csv.reader(file, delimiter=';')
+        for row in reader:
+            if count == 0:
+                count += 1  #On passe la 1ère ligne
+            else:
+                data_list.append(row)
+    return data_list
+
+
+def str_into_float(data, col):
+    for row in data:
+        row[col] = float(row[col])
+
+
+def quality01(
+):  #Prend un array comme un input, argument relié à "data" ça serait cool
+    desired_output = []  #liste de "vrais" output divisés par 10
+    for i in data:
+        last = float(i[11]) / 10
+        desired_output.append(last)
+    return desired_output
+
+
+"""def mean_col(colonne, data):  #Avant définir data = csv_into_list(...)
+    somme = 0
+    for row in data:
+        somme += float(row[colonne])
+    return somme / len(data)
+
+
+def var_col(
+        colonne,
+        data):  #Avant definir mean = mean_col(...), data = csv_into_list(...)
+    #Fonction bizarrement lente(+/- 2sec)
+    var = 0
+    for row in data:
+        var += (float(row[colonne]) - mean_col(colonne, data))**2
+    return var / len(data)
+"""
+def mean_col(colonne, data):
+    return np.mean(data.T[colonne])
+
+
+def var_col(colonne, data):
+    return np.var(data.T[colonne])
+
+"""
+def preprocessing(ligne, col):
+    y_ij = (float(data[ligne][col]) - mean_col(col, data)) / var_col(col, data)
+    #i = ligne, j = colonne
+    return y_ij
+"""
+def preprocessing(ligne, col):  #Definir data = csv_into_list
+    y_ij = (float(data[ligne][col]) - mean_col(col, data)) / var_col(col, data)
+    #i = ligne, j = colonne
+    return y_ij
+
+
+"""
+Pas utile pour le moment, va ralentir l'execution pour rien.
+data = csv_into_list()
+for i in range(len(data[0])-1):
+  str_into_float(data,i)
+"""
+
+#-----------------------------------
+
+class NeuralNetwork():
+    def __init__(self, n_input, n_hidden, n_output):
+        self.n_input = n_input
+        self.n_hidden = n_hidden
+        self.n_output = n_output
+        #self.network = network
+
+    def new_network(
+            self
+    ):  #Problème de style, on ré-initialise une 2e fois, autant le mettre dans __init__()
+        network = []  #stocke tous les points
+        h_layer = [
+            [random.random() for i in range(self.n_input)]
+            for j in range(self.n_hidden)
+        ]  #crée un weight par neurone de la couche hidden, +1 est le biais
+        o_layer = [[random.random() for i in range(self.n_hidden)]
+                   for j in range(self.n_output)
+                   ]  #même chose pour couche output
+        network.append(h_layer)
+        network.append(o_layer)
+        return network
+
+    def output(self, neuron, wine,
+               n_layer):  #output général #n_hidden --> n_layer = 0
+        if n_layer == 0:
+            out = np.dot(self.weights[n_layer][neuron],
+                         training_set_inputs[wine])
+        else:
+            out = np.dot(self.weights[n_layer][neuron],
+                         np.array([
+                             output(self, i, wine, n_layer=n_layer - 1)
+                             for i in range(n_hidden)
+                         ]))  #range( n_hidden[n_layer] )
+        return self.sigmoid(out)
+
+    def sigmoid(self, x):
+        f = (1 / (1 + math.exp(-x)))
+        return f
+
+    def sigmoid_derivative(self, x):
+        b = self.sigmoid(x) * (1 - self.sigmoid(x))
+        return b
+
+    def erreur_ext(self, true, output):  #25/11 18:42 Ne fonctionne pas
+        #je préfère l'appeller output_error
+        desired_output = training_set_outputs[0]
+        y_chapeau = NeuralNetwork.output(self,1,wine, 0)
+        e_e = (desired_output - y_chapeau) * NeuralNetwork.sigmoid_derivative(
+            self, y_chapeau)
+        return e_e
+
+    def internal_error(self, rank_hidden, wine):
+        #où rank_hidden est le numéro de neurone dans une couche cachée,
+        y_true = training_set_outputs[wine]
+        y_chapeau_ext = NeuralNetwork.output(self,0,wine, 1)
+        #print(y_chapeau_ext) #Couche interne ou couche externe ?
+        y_chapeau_int = NeuralNetwork.output(self, rank_hidden,wine,0)
+        #print(y_chapeau_int)
+        a = ((NeuralNetwork.self.weights(self)[-1][0][rank_hidden]) *
+             (NeuralNetwork.erreur_ext(self, y_true, y_chapeau_ext)) *
+             (NeuralNetwork.sigmoid_derivative(self, y_chapeau_int)))
+        #print(NeuralNetwork.new_network(self)[-1][0][rank_hidden],NeuralNetwork.erreur_ext(self,y_true,y_chapeau_ext),NeuralNetwork.sigmoid_derivative(self,y_chapeau_int),a)
+        return a
+
+
+    def update_weights(self,wine, l_rate):
+        #Poids couche interne
+        true = training_set_outputs[wine]
+        for k in range(len(self.weights[0])):
+            for i in range(11):
+                self.weights[0][k][i] = self.weights[0][k][i] + l_rate * NeuralNetwork.internal_error(
+                        self, k, wine) * float(training_set_inputs[wine][i])
+                #print(NeuralNetwork.internal_error(self,k,ligne)) #Ne print que 0.0
+        #Poids couche externe:
+        for j in range(len(self.weights[0])):
+            self.weights[1][0][
+                j] = self.weights[1][0][j] + l_rate * NeuralNetwork.erreur_ext(
+                    self, true, NeuralNetwork.output(self,0,wine,1)
+                ) * NeuralNetwork.output(self, j, ligne,0)
+        #prob avec erreur_ext et internal_error
+
+
+"""
+  def train(self,training_set_inputs,training_set_outputs, 1600):
+       
+"""
+
+data = csv_into_list()
+
+qqch = NeuralNetwork(11, 3, 1)
+#network = qqch.new_network()
+#print(qqch.erreur_ext(5,output))
+#qqch.internal_error(0,0)
+#print(qqch.output_h(0,0))
+#print(mean_col(0,data))
+#print(var_col(0,data))
+network = qqch.new_network()
+a = qqch.update_weights(0, 1)
+print(a)
+#print(qqch.output(0,0,1))
+#output = qqch.sigmoid(sum)
+#print(output)
+#(qqch.quality01 - output)
+"""
+Test update_weights
+"""
+NN = NeuralNetwork(11, 3, 1)
+net = NN.new_network()
+print("avant update", net)
+NN.update_weights(0, 1)
+print("apres update", net)
+print("-----------------------------------------------")
+print(NN.internal_error(0, 0))
